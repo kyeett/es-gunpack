@@ -16,5 +16,9 @@ Golang client that monitors one or multiple Elasticsearch indices and
 | Sprint # |                  Target                 | Time (Actual) |
 |----------|-----------------------------------------|---------------|
 |          |                                         |               |
-|        1 | Use Elasticsearch client, retrieve data | 45 ()         |
+|        1 | Use Elasticsearch client, retrieve data | 45 (50)       |
 |          |                                         | **Total**: 0h |
+
+##
+* elasticsearch client - https://godoc.org/github.com/olivere/elastic
+* cli refererence - https://github.com/urfave/cli#generated-help-text
