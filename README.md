@@ -8,20 +8,31 @@ Golang client that monitors one or multiple Elasticsearch indices and
 
 
 ## Todos
-* Unmarshall Elasticsearch document to golang map
-* Update document with "parsed tag"
+ 
+* Parse protobuf signal based on signal name
+* Add JSON after parse
 
 ## Done
+*~~Find a way of updating matched documents~
 * ~~Get data from Elasticsearch~~
 * ~~Command line interface~~
+* ~~Unmarshall Elasticsearch document to golang map~~
+* ~~Update document with "parsed tag"~~
+
 
 ## Sprints
 | Sprint # |                  Target                 |  Time (Actual)  |
 |----------|-----------------------------------------|-----------------|
+|        3 | Update documents based on ID            | 45 (71)         |
 |        2 | Unmarshall json, ~~add parsed tag~~     | 45 (82)         |
 |        1 | Use Elasticsearch client, retrieve data | 45 (50)         |
-|          |                                         | **Total**: 0h45 |
+|          |                                         | **Total**: 2h23 |
 
 ##
-* elasticsearch client - https://godoc.org/github.com/olivere/elastic
+* Elasticsearch in general
+    - https://www.elastic.co/blog/found-optimizing-elasticsearch-searches - Query vs Filter
+    - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html - BoolQuery, Must, Must_not
+* elasticsearch client
+    - https://godoc.org/github.com/olivere/elastic
+    - https://github.com/olivere/elastic/wiki
 * cli refererence - https://github.com/urfave/cli#generated-help-text

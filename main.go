@@ -71,14 +71,40 @@ func main() {
 		}
 		fmt.Printf("Elasticsearch returned with code %d and version %s\n", code, info.Version.Number)
 
-		var index string = "logstash-2018.06.15"
+		//var index string = "logstash-*"
 
-		termQuery := elastic.NewMatchAllQuery()
+		// termQuery := elastic.NewMatchAllQuery()
+		// termQuery := elastic.NewMatchQuery("msg", "RadioBearerSetup10298")
+		boolTermQuery := elastic.NewBoolQuery().MustNot(elastic.NewTermQuery("parsed", false))
+		/*
+		   {
+		     "query": {
+		       "bool" : {
+		         "must_not" : {
+		           "term" : {
+		             "parsed" : true
+		           }
+		         }
+		       }
+		     }
+		   }
+		*/
+		src, err := boolTermQuery.Source()
+		if err != nil {
+			panic(err)
+		}
+		data, err := json.MarshalIndent(src, "", "  ")
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(data))
+
+		var updateIndex string = "logstash-2018.06.15"
 		result, err := client.Search().
-			Index(index).
+			Index(updateIndex).
 			From(0).
 			Size(9000). //TODO: needs rewrite this using scrolling, as this implementation may loose entries if there's more than 9K entries per sleep period
-			Query(termQuery).
+			Query(boolTermQuery).
 			Do(context.Background())
 
 		if err != nil {
@@ -89,7 +115,7 @@ func main() {
 		// result is of type result and returns hits, suggestions,
 		// and all kinds of other information from Elasticsearch.
 		fmt.Printf("Query took %d milliseconds\n", result.TookInMillis)
-		// fmt.Printf("%+v\n", result)
+		fmt.Printf("%+v\n", result.Hits)
 
 		// Here's how you iterate through results with full control over each step.
 		if result.Hits.TotalHits > 0 {
@@ -107,21 +133,16 @@ func main() {
 					// Deserialization failed
 				}
 
-				// Work with tweet
-				fmt.Printf("JsonMap %v\n", jsonMap["from"])
-				fmt.Printf("JsonMap %v+\n", jsonMap)
+				fmt.Printf("hit %+v\n", hit)
+				fmt.Printf("JsonMap %+v\n", jsonMap)
 
-				update, err := client.Update().Index(index).Type("doc").Id("AWQCk0tPxTNcL8eIfO8W").
-					Script(elastic.NewScriptInline("ctx._source.host = 'test'").Lang("painless")).
-					Upsert(map[string]interface{}{"host": "hej"}).
+				update, _ := client.Update().Index(updateIndex).Type("doc").Id(hit.Id).
+					Script(elastic.NewScriptInline("ctx._source.parsed = false").Lang("painless")).
 					Do(ctx)
-				fmt.Printf("New version of tweet %q is now %d\n", update.Id, update.Version)
 
-				fmt.Printf("%+v\n", update)
-				fmt.Printf("%+v\n", err)
-				break
+				fmt.Printf("New version of document %q is now %d\n", update.Id, update.Version)
+
 			}
-
 		} else {
 			// No hits
 			fmt.Print("Found no tweets\n")

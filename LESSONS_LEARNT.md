@@ -32,7 +32,50 @@ index:logstash-2018.06.15
 You can insert various types of authentication into your requests. Available 
 I added the username/password needed for authentication to Elasticsearch under Get mapping -> Authorization -> Type (Basic Auth) -> enter username/password.
 
+### Short ones
+* [Kibana dev console](http://localhost:5601/app/kibana#/dev_tools/console?_g=()) is useful to debug queries and filters
+* [Boolean filters](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html) are used for boolean logic in Elasticsearch queries
+```
+POST _search
+{
+  "query": {
+    "bool" : {
+      "must" : {
+        "term" : { "user" : "kimchy" }
+      },
+      "filter": {
+        "term" : { "tag" : "tech" }
+      },
+      "must_not" : {
+        "range" : {
+          "age" : { "gte" : 10, "lte" : 20 }
+        }
+      },
+      "boost" : 1.0
+    }
+  }
+}
+```
+A general guide is ([SO: elasticsearch bool query combine must with OR](https://stackoverflow.com/questions/28538760/elasticsearch-bool-query-combine-must-with-or))
+```
+OR is spelled "should"
+AND is spelled "must"
+NOR is spelled "should_not"
+```
+
 # Bugs/weird things
+
+# Elastic-lib
+
+## Can't update multiple values in single document
+Using the Update() function, only the last "Script()" is actually triggered. Below, only ***_source.something_else*** will be updated, and _source.parsed left as it is.
+```
+update, _ := client.Update().Index(updateIndex).Type("doc").Id("AWQCkaaoxTNcL8eIfO44").
+    Script(elastic.NewScriptInline("ctx._source.parsed = false").Lang("painless")).
+    Script(elastic.NewScriptInline("ctx._source.something_else = false").Lang("painless")).
+    Do(ctx)
+
+```
 
 ## elastic.SetSniff(false)
 Initially, I was unable to connect to my local Elasticsearch instance with the client library. The connection failed with the message:
@@ -42,12 +85,36 @@ Initially, I was unable to connect to my local Elasticsearch instance with the c
 
 In the end I found the answer in the Elktail application: https://github.com/knes1/elktail/blob/master/elktail.go . It seems that setting the elastic.SetSniff(false), option when creating the client solves the issue. I don't know why.
 
-        defaultOptions := []elastic.ClientOptionFunc{
-            elastic.SetURL("http://127.0.0.1:9200", "http://localhost:9200"),
-            elastic.SetSniff(false),
-            elastic.SetBasicAuth("elastic", "changeme"),
-            elastic.SetHealthcheckTimeoutStartup(10 * time.Second),
-            elastic.SetHealthcheckTimeout(2 * time.Second),
-        }
+    defaultOptions := []elastic.ClientOptionFunc{
+        elastic.SetURL("http://127.0.0.1:9200", "http://localhost:9200"),
+        elastic.SetSniff(false),
+        elastic.SetBasicAuth("elastic", "changeme"),
+        elastic.SetHealthcheckTimeoutStartup(10 * time.Second),
+        elastic.SetHealthcheckTimeout(2 * time.Second),
+    }
 
-
+## Print query
+Useful for debugging
+```
+src, err := boolTermQuery.Source()
+if err != nil {
+    panic(err)
+}
+data, err := json.MarshalIndent(src, "", "  ")
+if err != nil {
+    panic(err)
+}
+fmt.Println(string(data))
+```
+Result:
+```
+{
+  "bool": {
+    "must": {
+      "term": {
+        "parsed": true
+      }
+    }
+  }
+}
+```
