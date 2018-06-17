@@ -8,16 +8,19 @@ Golang client that monitors one or multiple Elasticsearch indices and
 
 
 ## Todos
-* Get data from Elasticsearch
-* Command line interface
+* Unmarshall Elasticsearch document to golang map
+* Update document with "parsed tag"
 
+## Done
+* ~~Get data from Elasticsearch~~
+* ~~Command line interface~~
 
 ## Sprints
-| Sprint # |                  Target                 | Time (Actual) |
-|----------|-----------------------------------------|---------------|
-|          |                                         |               |
-|        1 | Use Elasticsearch client, retrieve data | 45 (50)       |
-|          |                                         | **Total**: 0h |
+| Sprint # |                  Target                 |  Time (Actual)  |
+|----------|-----------------------------------------|-----------------|
+|        2 | Unmarshall json, ~~add parsed tag~~     | 45 (82)         |
+|        1 | Use Elasticsearch client, retrieve data | 45 (50)         |
+|          |                                         | **Total**: 0h45 |
 
 ##
 * elasticsearch client - https://godoc.org/github.com/olivere/elastic

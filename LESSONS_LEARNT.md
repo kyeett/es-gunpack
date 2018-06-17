@@ -5,6 +5,33 @@
 ```&{TookInMillis:3 ScrollId: Hits:0xc4201e6240 Suggest:map[] Aggregations:map[] TimedOut:false Error:<nil> Profile:<nil> Shards:0xc4201e8060}
 ```
 
+
+# Postman 
+### Postman community collections
+There are several useful collections that can be loaded into Postman. I found this one for Elasticsearch:
+https://github.com/sittinash/elasticsearch-postman/blob/master/Elasticsearch%20APIs.postman_collection.json
+
+**The examples overrides my own defined index name**. Can be changed under Pre-request Script
+```
+postman.setEnvironmentVariable("index", "logstash-2017.10.24");
+```
+
+### Postman variables
+Variables for insertion into requests can be defined in Postman, for example:
+```
+url:127.0.0.1
+port:9200
+index:logstash-2018.06.15
+```
+
+url:127.0.0.1
+port:9200
+index:logstash-2018.06.15
+
+### Postman Authorization
+You can insert various types of authentication into your requests. Available 
+I added the username/password needed for authentication to Elasticsearch under Get mapping -> Authorization -> Type (Basic Auth) -> enter username/password.
+
 # Bugs/weird things
 
 ## elastic.SetSniff(false)

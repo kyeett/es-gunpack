@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
+	"github.com/olivere/elastic"
 	"github.com/urfave/cli"
-	"gopkg.in/olivere/elastic.v5"
 )
 
 //
@@ -17,6 +18,12 @@ import (
 type Unpacker struct {
 	client   *elastic.Client // elasticsearch client
 	indicies []string
+}
+
+type document struct {
+	to    string
+	from  string
+	event string
 }
 
 func main() {
@@ -53,7 +60,6 @@ func main() {
 
 		if err != nil {
 			// Handle error
-			log.Println("first")
 			log.Fatal(err)
 		}
 
@@ -65,9 +71,11 @@ func main() {
 		}
 		fmt.Printf("Elasticsearch returned with code %d and version %s\n", code, info.Version.Number)
 
+		var index string = "logstash-2018.06.15"
+
 		termQuery := elastic.NewMatchAllQuery()
 		result, err := client.Search().
-			Index("logstash-*").
+			Index(index).
 			From(0).
 			Size(9000). //TODO: needs rewrite this using scrolling, as this implementation may loose entries if there's more than 9K entries per sleep period
 			Query(termQuery).
@@ -81,28 +89,38 @@ func main() {
 		// result is of type result and returns hits, suggestions,
 		// and all kinds of other information from Elasticsearch.
 		fmt.Printf("Query took %d milliseconds\n", result.TookInMillis)
-		fmt.Printf("%+v\n", result)
+		// fmt.Printf("%+v\n", result)
 
 		// Here's how you iterate through results with full control over each step.
 		if result.Hits.TotalHits > 0 {
 			fmt.Printf("Found a total of %d tweets\n", result.Hits.TotalHits)
 
-			/*
-			   // Iterate through results
-			   for _, hit := range result.Hits.Hits {
-			      // hit.Index contains the name of the index
+			jsonMap := make(map[string]interface{})
 
-			      // Deserialize hit.Source into a Tweet (could also be just a map[string]interface{}).
-			      var t Tweet
-			        err := json.Unmarshal(*hit.Source, &t)
-			        if err != nil {
-			           // Deserialization failed
-			        }
+			// Iterate through results
+			for _, hit := range result.Hits.Hits {
+				// hit.Index contains the name of the index
 
-			        // Work with tweet
-			        fmt.Printf("Tweet by %s: %s\n", t.To, t.From)
-			   }
-			*/
+				// Deserialize hit.Source into a Tweet (could also be just a map[string]interface{}).
+				err := json.Unmarshal(*hit.Source, &jsonMap)
+				if err != nil {
+					// Deserialization failed
+				}
+
+				// Work with tweet
+				fmt.Printf("JsonMap %v\n", jsonMap["from"])
+				fmt.Printf("JsonMap %v+\n", jsonMap)
+
+				update, err := client.Update().Index(index).Type("doc").Id("AWQCk0tPxTNcL8eIfO8W").
+					Script(elastic.NewScriptInline("ctx._source.host = 'test'").Lang("painless")).
+					Upsert(map[string]interface{}{"host": "hej"}).
+					Do(ctx)
+				fmt.Printf("New version of tweet %q is now %d\n", update.Id, update.Version)
+
+				fmt.Printf("%+v\n", update)
+				fmt.Printf("%+v\n", err)
+				break
+			}
 
 		} else {
 			// No hits
