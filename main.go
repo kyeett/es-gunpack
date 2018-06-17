@@ -32,24 +32,30 @@ func main() {
 	app.Usage = `Golang client that monitors one or multiple Elasticsearch indices and unpacks binary data`
 	app.HideHelp = true
 	app.Version = "0.1"
+	app.EnableBashCompletion = true
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:  "config, c",
-			Usage: "Load configuration from `FILE`",
+			Name:  "url",
+			Value: "localhost",
+			Usage: "Url of the elasticsearch instance",
 		},
-		cli.StringFlag{
-			Name:  "lang",
-			Value: "english",
-			Usage: "language for the greeting",
+		cli.BoolFlag{
+			Name:  "reset-parsed",
+			Usage: "Reset parsed-flag on document",
+		},
+		cli.BoolFlag{
+			Name:  "ping",
+			Usage: "Ping Elasticsearch instance. Tests authentication, url and port",
 		},
 	}
 	app.Action = func(c *cli.Context) {
-		fmt.Println(c.String("lang"))
-		ctx := context.Background()
 
+		url := "http://" + c.String("url") + ":9200"
+
+		ctx := context.Background()
 		defaultOptions := []elastic.ClientOptionFunc{
-			elastic.SetURL("http://localhost:9200"),
+			elastic.SetURL(url),
 			elastic.SetSniff(false),
 			elastic.SetBasicAuth("elastic", "changeme"),
 			elastic.SetHealthcheckTimeoutStartup(10 * time.Second),
@@ -63,19 +69,31 @@ func main() {
 			log.Fatal(err)
 		}
 
-		// Ping the Elasticsearch server to get e.g. the version number
-		info, code, err := client.Ping("http://127.0.0.1:9200").Do(ctx)
-		if err != nil {
-			// Handle error
-			log.Fatal(err)
+		if c.Bool("reset-parsed") {
+			fmt.Println("All tags reset\n")
+			os.Exit(0)
 		}
-		fmt.Printf("Elasticsearch returned with code %d and version %s\n", code, info.Version.Number)
+
+		if c.Bool("ping") {
+			info, code, err := client.Ping(url).Do(ctx)
+			if err != nil {
+				// Handle error
+				log.Fatal(err)
+			}
+			fmt.Printf("\nElasticsearch returned OK with code %d and version %s\n\n", code, info.Version.Number)
+			os.Exit(0)
+		}
+
+		unpacker := Unpacker{client: client, indicies: []string{"logstash-2018.06.15"}}
+		fmt.Printf("%v\n", unpacker)
 
 		//var index string = "logstash-*"
 
 		// termQuery := elastic.NewMatchAllQuery()
 		// termQuery := elastic.NewMatchQuery("msg", "RadioBearerSetup10298")
-		boolTermQuery := elastic.NewBoolQuery().MustNot(elastic.NewTermQuery("parsed", false))
+		boolTermQuery := elastic.NewBoolQuery()
+
+		boolTermQuery = boolTermQuery.MustNot(elastic.NewTermQuery("parsed", false))
 		/*
 		   {
 		     "query": {

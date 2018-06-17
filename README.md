@@ -11,6 +11,8 @@ Golang client that monitors one or multiple Elasticsearch indices and
  
 * Parse protobuf signal based on signal name
 * Add JSON after parse
+* Indicies as CLI arguments
+* Password/user as optional input argument
 
 ## Done
 *~~Find a way of updating matched documents~
