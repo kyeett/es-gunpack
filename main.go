@@ -20,6 +20,22 @@ type Unpacker struct {
 	indicies []string
 }
 
+func (u Unpacker) setParsedStatus(status bool) {
+	fmt.Println("All tags reset\n")
+
+	termQuery := elastic.NewMatchAllQuery()
+	ctx := context.Background()
+	_, err := u.client.UpdateByQuery(u.indicies[0]).
+		Query(termQuery).
+		Script(elastic.NewScript("ctx._source.parsed = params.status").Param("status", status)).
+		//		Script(elastic.NewScript("ctx._source.parsed = true").Params(map[string]interface{}{"tag": "blue"}).Lang("painless")).
+		Do(ctx)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 type document struct {
 	to    string
 	from  string
@@ -43,6 +59,10 @@ func main() {
 		cli.BoolFlag{
 			Name:  "reset-parsed",
 			Usage: "Reset parsed-flag on document",
+		},
+		cli.BoolFlag{
+			Name:  "set-parsed",
+			Usage: "Set parsed-flag on document",
 		},
 		cli.BoolFlag{
 			Name:  "ping",
@@ -69,11 +89,6 @@ func main() {
 			log.Fatal(err)
 		}
 
-		if c.Bool("reset-parsed") {
-			fmt.Println("All tags reset\n")
-			os.Exit(0)
-		}
-
 		if c.Bool("ping") {
 			info, code, err := client.Ping(url).Do(ctx)
 			if err != nil {
@@ -85,15 +100,20 @@ func main() {
 		}
 
 		unpacker := Unpacker{client: client, indicies: []string{"logstash-2018.06.15"}}
-		fmt.Printf("%v\n", unpacker)
 
-		//var index string = "logstash-*"
+		//Set tag parsed=false to all documents
+		if c.Bool("reset-parsed") {
+			unpacker.setParsedStatus(false)
+			os.Exit(0)
+		}
 
-		// termQuery := elastic.NewMatchAllQuery()
-		// termQuery := elastic.NewMatchQuery("msg", "RadioBearerSetup10298")
-		boolTermQuery := elastic.NewBoolQuery()
+		//Set tag parsed=true to all documents
+		if c.Bool("set-parsed") {
+			unpacker.setParsedStatus(true)
+			os.Exit(0)
+		}
 
-		boolTermQuery = boolTermQuery.MustNot(elastic.NewTermQuery("parsed", false))
+		boolTermQuery := elastic.NewBoolQuery().MustNot(elastic.NewTermQuery("parsed", true))
 		/*
 		   {
 		     "query": {
@@ -107,15 +127,6 @@ func main() {
 		     }
 		   }
 		*/
-		src, err := boolTermQuery.Source()
-		if err != nil {
-			panic(err)
-		}
-		data, err := json.MarshalIndent(src, "", "  ")
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println(string(data))
 
 		var updateIndex string = "logstash-2018.06.15"
 		result, err := client.Search().
@@ -133,11 +144,10 @@ func main() {
 		// result is of type result and returns hits, suggestions,
 		// and all kinds of other information from Elasticsearch.
 		fmt.Printf("Query took %d milliseconds\n", result.TookInMillis)
-		fmt.Printf("%+v\n", result.Hits)
 
 		// Here's how you iterate through results with full control over each step.
 		if result.Hits.TotalHits > 0 {
-			fmt.Printf("Found a total of %d tweets\n", result.Hits.TotalHits)
+			fmt.Printf("\nFound a total of %d unparsed signals\n", result.Hits.TotalHits)
 
 			jsonMap := make(map[string]interface{})
 
@@ -149,21 +159,16 @@ func main() {
 				err := json.Unmarshal(*hit.Source, &jsonMap)
 				if err != nil {
 					// Deserialization failed
+					fmt.Printf("Deserialization failed %v\n", err)
 				}
 
-				fmt.Printf("hit %+v\n", hit)
-				fmt.Printf("JsonMap %+v\n", jsonMap)
-
-				update, _ := client.Update().Index(updateIndex).Type("doc").Id(hit.Id).
-					Script(elastic.NewScriptInline("ctx._source.parsed = false").Lang("painless")).
-					Do(ctx)
-
-				fmt.Printf("New version of document %q is now %d\n", update.Id, update.Version)
-
+				fmt.Printf("Update document with ID %v\n", hit.Id)
+				// update, _ := client.Update().Index(updateIndex).Type("doc").Id(hit.Id).
+				// 	Script(elastic.NewScriptInline("ctx._source.parsed = false").Lang("painless")).
+				// 	Do(ctx)
 			}
 		} else {
-			// No hits
-			fmt.Print("Found no tweets\n")
+			fmt.Print("\nFound no unparsed signals found\n")
 		}
 
 	}

@@ -2,7 +2,8 @@
 
 ## fmt.Printf("%+v\n", result)
 %+v prints struct keys and values:
-```&{TookInMillis:3 ScrollId: Hits:0xc4201e6240 Suggest:map[] Aggregations:map[] TimedOut:false Error:<nil> Profile:<nil> Shards:0xc4201e8060}
+```
+&{TookInMillis:3 ScrollId: Hits:0xc4201e6240 Suggest:map[] Aggregations:map[] TimedOut:false Error:<nil> Profile:<nil> Shards:0xc4201e8060}
 ```
 
 
@@ -66,6 +67,21 @@ NOR is spelled "should_not"
 # Bugs/weird things
 
 # Elastic-lib
+Really a feature of Elasticsearch, but when using Painless scripting language, the variable has to be called as **params.status**. E.g.:
+**Correct:**
+```
+Script(elastic.NewScript("ctx._source.parsed = params.status").Param("status", status)).
+```
+**Incorrect:**
+```
+Script(elastic.NewScript("ctx._source.parsed = status").Param("status", status)).
+```
+```
+elasticsearch_1  |  at java.lang.Thread.run(Thread.java:748) [?:1.8.0_141]
+elasticsearch_1  | Caused by: java.lang.IllegalArgumentException: Variable [status] is not defined.
+elasticsearch_1  |  at org.elasticsearch.painless.PainlessScript$Script.compile(ctx._source.parsed = status:22) ~[?:?]
+```
+
 
 ## Can't update multiple values in single document
 Using the Update() function, only the last "Script()" is actually triggered. Below, only ***_source.something_else*** will be updated, and _source.parsed left as it is.
