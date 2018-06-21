@@ -1,14 +1,9 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"log"
 	"os"
-	"time"
 
 	"github.com/kyeett/es-gunpack/pkg/unpacker"
-	"github.com/olivere/elastic"
 	"github.com/urfave/cli"
 )
 
@@ -26,6 +21,10 @@ func main() {
 			Value: "localhost",
 			Usage: "Url of the elasticsearch instance",
 		},
+		cli.StringFlag{
+			Name:  "set-field-value",
+			Usage: "Set the data field to value",
+		},
 		cli.BoolFlag{
 			Name:  "reset-parsed",
 			Usage: "Reset parsed-flag on document",
@@ -42,34 +41,12 @@ func main() {
 	app.Action = func(c *cli.Context) {
 
 		url := "http://" + c.String("url") + ":9200"
-
-		ctx := context.Background()
-		defaultOptions := []elastic.ClientOptionFunc{
-			elastic.SetURL(url),
-			elastic.SetSniff(false),
-			elastic.SetBasicAuth("elastic", "changeme"),
-			elastic.SetHealthcheckTimeoutStartup(10 * time.Second),
-			elastic.SetHealthcheckTimeout(2 * time.Second),
-		}
-
-		client, err := elastic.NewClient(defaultOptions...)
-
-		if err != nil {
-			// Handle error
-			log.Fatal(err)
-		}
+		unpackerClient := unpacker.NewUnpacker(url, "logstash-2018.06.15")
 
 		if c.Bool("ping") {
-			info, code, err := client.Ping(url).Do(ctx)
-			if err != nil {
-				// Handle error
-				log.Fatal(err)
-			}
-			fmt.Printf("\nElasticsearch returned OK with code %d and version %s\n\n", code, info.Version.Number)
+			unpackerClient.PingElasticsearch(url)
 			os.Exit(0)
 		}
-
-		unpackerClient := unpacker.Unpacker{client, "logstash-2018.06.15"}
 
 		//Set tag parsed=false to all documents
 		if c.Bool("reset-parsed") {
@@ -80,6 +57,11 @@ func main() {
 		//Set tag parsed=true to all documents
 		if c.Bool("set-parsed") {
 			unpackerClient.SetParsedStatus(true)
+			os.Exit(0)
+		}
+
+		if c.String("set-field-value") != "" {
+			unpackerClient.SetFieldStringValue("data", c.String("set-field-value"))
 			os.Exit(0)
 		}
 

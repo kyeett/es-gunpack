@@ -5,19 +5,49 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/olivere/elastic"
 )
 
 //
-// Unpacker is a structure that holds data necessary to monitor and unpack data in Elasticsearch
+// unpacker is a structure that holds data necessary to monitor and unpack data in Elasticsearch
 //
-type Unpacker struct {
+type unpacker struct {
 	Client *elastic.Client // elasticsearch client
 	Index  string
 }
 
-func (u Unpacker) SetParsedStatus(status bool) {
+func NewUnpacker(url, index string) unpacker {
+	defaultOptions := []elastic.ClientOptionFunc{
+		elastic.SetURL(url),
+		elastic.SetSniff(false),
+		elastic.SetBasicAuth("elastic", "changeme"),
+		elastic.SetHealthcheckTimeoutStartup(10 * time.Second),
+		elastic.SetHealthcheckTimeout(2 * time.Second),
+	}
+
+	client, err := elastic.NewClient(defaultOptions...)
+
+	if err != nil {
+		// Handle error
+		log.Fatal(err)
+	}
+
+	return unpacker{client, index}
+}
+
+func (u unpacker) PingElasticsearch(url string) {
+	ctx := context.Background()
+	info, code, err := u.Client.Ping(url).Do(ctx)
+	if err != nil {
+		// Handle error
+		log.Fatal(err)
+	}
+	fmt.Printf("\nElasticsearch returned OK with code %d and version %s\n\n", code, info.Version.Number)
+}
+
+func (u unpacker) SetParsedStatus(status bool) {
 	fmt.Println("All tags reset\n")
 
 	termQuery := elastic.NewMatchAllQuery()
@@ -25,7 +55,6 @@ func (u Unpacker) SetParsedStatus(status bool) {
 	_, err := u.Client.UpdateByQuery(u.Index).
 		Query(termQuery).
 		Script(elastic.NewScript("ctx._source.parsed = params.status").Param("status", status)).
-		//    Script(elastic.NewScript("ctx._source.parsed = true").Params(map[string]interface{}{"tag": "blue"}).Lang("painless")).
 		Do(ctx)
 
 	if err != nil {
@@ -33,7 +62,35 @@ func (u Unpacker) SetParsedStatus(status bool) {
 	}
 }
 
-func (u Unpacker) ParseAndUpdate() {
+func (u unpacker) SetFieldStringValue(fieldName string, s string) {
+
+	termQuery := elastic.NewMatchAllQuery()
+	ctx := context.Background()
+	_, err := u.Client.UpdateByQuery(u.Index).
+		Query(termQuery).
+		Script(elastic.NewScript("ctx._source."+fieldName+" = params.data").Param("data", s)).
+		Do(ctx)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (u unpacker) SetFieldByteValue(fieldName string, b []byte) {
+
+	termQuery := elastic.NewMatchAllQuery()
+	ctx := context.Background()
+	_, err := u.Client.UpdateByQuery(u.Index).
+		Query(termQuery).
+		Script(elastic.NewScript("ctx._source."+fieldName+" = params.data").Param("data", b)).
+		Do(ctx)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (u unpacker) ParseAndUpdate() {
 
 	boolTermQuery := elastic.NewBoolQuery().MustNot(elastic.NewTermQuery("parsed", true))
 	/*
@@ -83,7 +140,7 @@ func (u Unpacker) ParseAndUpdate() {
 				fmt.Printf("Deserialization failed %v\n", err)
 			}
 
-			fmt.Printf("Update document with ID %v\n", hit.Id)
+			fmt.Printf("Update document with ID %v, %v\n", hit.Id, jsonMap["data"])
 			// update, _ := client.Update().Index(updateIndex).Type("doc").Id(hit.Id).
 			//    Script(elastic.NewScriptInline("ctx._source.parsed = false").Lang("painless")).
 			//    Do(ctx)

@@ -5,15 +5,22 @@ Golang client that monitors one or multiple Elasticsearch indices and
 2. Unpacks the data to JSON
 3. Updates the documents with unpacked data
 
-
+## Generate protobuf files
+```
+protoc --go_out=. pkg/example-protofiles/example.proto
+```
 
 ## Todos 
 * Parse protobuf signal based on signal name
+* Download and decode proto signal
+* Add JSON to ElasticSearch
 * Add JSON after parse
 * Indicies as CLI arguments
 * Password/user as optional input argument
+* Create an application that does a one time pass over the data in ES and parses value
 
 ## Done
+* ~~Compile protobuf signal~
 * ~~Restructure project according to cli/pkg~~
 * ~~Find a way of updating matched documents~~
 * ~~Get data from Elasticsearch~~
@@ -23,18 +30,20 @@ Golang client that monitors one or multiple Elasticsearch indices and
 
 
 ## Sprints
-| Sprint # |                  Target                  |  Time (Actual)  |
-|----------|------------------------------------------|-----------------|
-|        4 | Restructure project according to cli/pkg | 45 (37)         |
-|        3 | Update documents based on ID             | 45 (71)         |
-|        2 | Unmarshall json, ~~add parsed tag~~      | 45 (82)         |
-|        1 | Use Elasticsearch client, retrieve data  | 45 (50)         |
-|          |                                          | **Total**: 2h23 |
+| Sprint # |                   Target                   |  Time (Actual)  |
+|----------|--------------------------------------------|-----------------|
+|          |                                            | 45 ()           |
+|        5 | Compile protobuf signal, upload data to ES | 45 (57)         |
+|        4 | Restructure project according to cli/pkg   | 45 (37)         |
+|        3 | Update documents based on ID               | 45 (71)         |
+|        2 | Unmarshall json, ~~add parsed tag~~        | 45 (82)         |
+|        1 | Use Elasticsearch client, retrieve data    | 45 (50)         |
+|          |                                            | **Total**: 3h00 |
 
 ##
 * Elasticsearch in general
-    - https://www.elastic.co/blog/found-optimizing-elasticsearch-searches - Query vs Filter
-    - https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html - BoolQuery, Must, Must_not
+    - [Query vs Filter](https://www.elastic.co/blog/found-optimizing-elasticsearch-searches) - 
+    - [BoolQuery, Must, Must_not](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html)
 * elasticsearch client
     - https://godoc.org/github.com/olivere/elastic
     - https://github.com/olivere/elastic/wiki
