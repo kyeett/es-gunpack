@@ -10,6 +10,11 @@ Golang client that monitors one or multiple Elasticsearch indices and
 protoc --go_out=. pkg/example-protofiles/example.proto
 ```
 
+## Coming milestones
+* 1 - The application that does a one time pass over the data in ES and parses value
+* 2 - Protobuf signals can be added from user-defined directory
+* 3 - The application continously monitors an index and parses as new documents comes in
+
 ## Todos 
 * Parse protobuf signal based on signal name
 * Download and decode proto signal
@@ -17,7 +22,8 @@ protoc --go_out=. pkg/example-protofiles/example.proto
 * Add JSON after parse
 * Indicies as CLI arguments
 * Password/user as optional input argument
-* Create an application that does a one time pass over the data in ES and parses value
+* ...
+* Decode ASN.1 messages (if needed)
 
 ## Done
 * ~~Compile protobuf signal~
@@ -33,17 +39,19 @@ protoc --go_out=. pkg/example-protofiles/example.proto
 | Sprint # |                   Target                   |  Time (Actual)  |
 |----------|--------------------------------------------|-----------------|
 |          |                                            | 45 ()           |
+|        6 | Download and unpack protosignals           | 30 (42)           |
 |        5 | Compile protobuf signal, upload data to ES | 45 (57)         |
 |        4 | Restructure project according to cli/pkg   | 45 (37)         |
 |        3 | Update documents based on ID               | 45 (71)         |
 |        2 | Unmarshall json, ~~add parsed tag~~        | 45 (82)         |
 |        1 | Use Elasticsearch client, retrieve data    | 45 (50)         |
-|          |                                            | **Total**: 3h00 |
+|          |                                            | **Total**: 5h29 |
 
 ##
 * Elasticsearch in general
     - [Query vs Filter](https://www.elastic.co/blog/found-optimizing-elasticsearch-searches) - 
     - [BoolQuery, Must, Must_not](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html)
+    - [Painless scripting](https://www.elastic.co/guide/en/elasticsearch/painless/current/painless-examples.html)
 * elasticsearch client
     - https://godoc.org/github.com/olivere/elastic
     - https://github.com/olivere/elastic/wiki

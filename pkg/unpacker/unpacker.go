@@ -90,7 +90,7 @@ func (u unpacker) SetFieldByteValue(fieldName string, b []byte) {
 	}
 }
 
-func (u unpacker) ParseAndUpdate() {
+func (u unpacker) ParseAndUpdate(fn func(map[string]interface{})) {
 
 	boolTermQuery := elastic.NewBoolQuery().MustNot(elastic.NewTermQuery("parsed", true))
 	/*
@@ -140,7 +140,8 @@ func (u unpacker) ParseAndUpdate() {
 				fmt.Printf("Deserialization failed %v\n", err)
 			}
 
-			fmt.Printf("Update document with ID %v, %v\n", hit.Id, jsonMap["data"])
+			fmt.Printf("Update document with ID %v\n", hit.Id)
+			fn(jsonMap)
 			// update, _ := client.Update().Index(updateIndex).Type("doc").Id(hit.Id).
 			//    Script(elastic.NewScriptInline("ctx._source.parsed = false").Lang("painless")).
 			//    Do(ctx)

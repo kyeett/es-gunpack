@@ -1,10 +1,18 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"os"
 
+	"github.com/davecgh/go-spew/spew"
+	"github.com/golang/protobuf/proto"
 	"github.com/kyeett/es-gunpack/pkg/unpacker"
 	"github.com/urfave/cli"
+
+	b64 "encoding/base64"
+
+	example "github.com/kyeett/es-gunpack/pkg/example-protofiles"
 )
 
 func main() {
@@ -65,7 +73,27 @@ func main() {
 			os.Exit(0)
 		}
 
-		unpackerClient.ParseAndUpdate()
+		unpackerClient.ParseAndUpdate(printData)
 	}
 	app.Run(os.Args)
+}
+
+func printData(jsonMap map[string]interface{}) {
+
+	if str, ok := jsonMap["data"].(string); ok {
+		sDec, _ := b64.StdEncoding.DecodeString(str)
+
+		newTest := &example.Test{}
+		err := proto.Unmarshal([]byte(sDec), newTest)
+		if err != nil {
+			log.Fatal("unmarshaling error: ", err)
+		}
+		fmt.Printf("%v, %T\n", jsonMap["data"], jsonMap["data"])
+		fmt.Printf("%v, %T\n", newTest, newTest)
+		spew.Dump(newTest)
+
+	} else {
+		log.Fatal("field 'data' is not string and cannot be decoded")
+	}
+
 }
