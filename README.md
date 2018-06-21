@@ -7,15 +7,15 @@ Golang client that monitors one or multiple Elasticsearch indices and
 
 
 
-## Todos
- 
+## Todos 
 * Parse protobuf signal based on signal name
 * Add JSON after parse
 * Indicies as CLI arguments
 * Password/user as optional input argument
 
 ## Done
-*~~Find a way of updating matched documents~
+* ~~Restructure project according to cli/pkg~~
+* ~~Find a way of updating matched documents~~
 * ~~Get data from Elasticsearch~~
 * ~~Command line interface~~
 * ~~Unmarshall Elasticsearch document to golang map~~
@@ -23,12 +23,13 @@ Golang client that monitors one or multiple Elasticsearch indices and
 
 
 ## Sprints
-| Sprint # |                  Target                 |  Time (Actual)  |
-|----------|-----------------------------------------|-----------------|
-|        3 | Update documents based on ID            | 45 (71)         |
-|        2 | Unmarshall json, ~~add parsed tag~~     | 45 (82)         |
-|        1 | Use Elasticsearch client, retrieve data | 45 (50)         |
-|          |                                         | **Total**: 2h23 |
+| Sprint # |                  Target                  |  Time (Actual)  |
+|----------|------------------------------------------|-----------------|
+|        4 | Restructure project according to cli/pkg | 45 (37)         |
+|        3 | Update documents based on ID             | 45 (71)         |
+|        2 | Unmarshall json, ~~add parsed tag~~      | 45 (82)         |
+|        1 | Use Elasticsearch client, retrieve data  | 45 (50)         |
+|          |                                          | **Total**: 2h23 |
 
 ##
 * Elasticsearch in general
@@ -38,3 +39,6 @@ Golang client that monitors one or multiple Elasticsearch indices and
     - https://godoc.org/github.com/olivere/elastic
     - https://github.com/olivere/elastic/wiki
 * cli refererence - https://github.com/urfave/cli#generated-help-text
+* Go best practices
+    - [Peter Bourgon - Best practices 2016](https://peter.bourgon.org/go-best-practices-2016/#dependency-management)
+    - [Template for repository structure](https://github.com/thockin/go-build-template)
