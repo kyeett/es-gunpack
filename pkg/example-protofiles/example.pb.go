@@ -48,7 +48,7 @@ func (x *FOO) UnmarshalJSON(data []byte) error {
 	return nil
 }
 func (FOO) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_example_5a1719c2058c4d17, []int{0}
+	return fileDescriptor_example_1992d2eaf6578a79, []int{0}
 }
 
 type Test struct {
@@ -63,7 +63,7 @@ func (m *Test) Reset()         { *m = Test{} }
 func (m *Test) String() string { return proto.CompactTextString(m) }
 func (*Test) ProtoMessage()    {}
 func (*Test) Descriptor() ([]byte, []int) {
-	return fileDescriptor_example_5a1719c2058c4d17, []int{0}
+	return fileDescriptor_example_1992d2eaf6578a79, []int{0}
 }
 func (m *Test) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Test.Unmarshal(m, b)
@@ -103,10 +103,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("pkg/example-protofiles/example.proto", fileDescriptor_example_5a1719c2058c4d17)
+	proto.RegisterFile("pkg/example-protofiles/example.proto", fileDescriptor_example_1992d2eaf6578a79)
 }
 
-var fileDescriptor_example_5a1719c2058c4d17 = []byte{
+var fileDescriptor_example_1992d2eaf6578a79 = []byte{
 	// 113 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0x29, 0xc8, 0x4e, 0xd7,
 	0x4f, 0xad, 0x48, 0xcc, 0x2d, 0xc8, 0x49, 0xd5, 0x2d, 0x28, 0xca, 0x2f, 0xc9, 0x4f, 0xcb, 0xcc,

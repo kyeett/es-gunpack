@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/olivere/elastic"
@@ -90,7 +91,20 @@ func (u unpacker) SetFieldByteValue(fieldName string, b []byte) {
 	}
 }
 
-func (u unpacker) ParseAndUpdate(fn func(map[string]interface{})) {
+func (u unpacker) ScritpByQuery(script string, params map[string]interface{}, query elastic.Query) {
+
+	ctx := context.Background()
+	_, err := u.Client.UpdateByQuery(u.Index).
+		Query(query).
+		Script(elastic.NewScript(script).Params(params)).
+		Do(ctx)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (u unpacker) ParseAndUpdate(fn func(map[string]interface{}) ([]byte, error)) {
 
 	boolTermQuery := elastic.NewBoolQuery().MustNot(elastic.NewTermQuery("parsed", true))
 	/*
@@ -110,7 +124,7 @@ func (u unpacker) ParseAndUpdate(fn func(map[string]interface{})) {
 	result, err := u.Client.Search().
 		Index(u.Index).
 		From(0).
-		Size(9000). //TODO: needs rewrite this using scrolling, as this implementation may loose entries if there's more than 9K entries per sleep period
+		Size(10000).
 		Query(boolTermQuery).
 		Do(context.Background())
 
@@ -125,28 +139,65 @@ func (u unpacker) ParseAndUpdate(fn func(map[string]interface{})) {
 
 	// Here's how you iterate through results with full control over each step.
 	if result.Hits.TotalHits > 0 {
+
 		fmt.Printf("\nFound a total of %d unparsed signals\n", result.Hits.TotalHits)
+		results := make(chan ParseResult, result.Hits.TotalHits)
 
-		jsonMap := make(map[string]interface{})
-
-		// Iterate through results
+		var wg sync.WaitGroup
 		for _, hit := range result.Hits.Hits {
-			// hit.Index contains the name of the index
+			jsonMap := make(map[string]interface{})
 
-			// Deserialize hit.Source into a Tweet (could also be just a map[string]interface{}).
+			// Deserialize hit.Source
 			err := json.Unmarshal(*hit.Source, &jsonMap)
 			if err != nil {
 				// Deserialization failed
 				fmt.Printf("Deserialization failed %v\n", err)
+				continue
 			}
 
-			fmt.Printf("Update document with ID %v\n", hit.Id)
-			fn(jsonMap)
-			// update, _ := client.Update().Index(updateIndex).Type("doc").Id(hit.Id).
-			//    Script(elastic.NewScriptInline("ctx._source.parsed = false").Lang("painless")).
-			//    Do(ctx)
+			wg.Add(1)
+
+			// Worker
+			go func(id string) {
+				defer wg.Done()
+
+				json, err := fn(jsonMap)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				results <- ParseResult{id, json}
+			}(hit.Id)
+
 		}
+
+		// Closer
+		go func() {
+			wg.Wait()
+			close(results)
+		}()
+
+		// Wait for parsing
+		for res := range results {
+
+			query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("_id", res.documentId))
+			script := "ctx._source.unpacked = params.data; ctx._source.parsed = true;"
+			u.ScritpByQuery(script, map[string]interface{}{"data": res.data}, query)
+			//u.SetFieldByQuery("parsed", true, query)
+			//       fmt.Println("Parsepasrse\n", string(res.data))
+		}
+
 	} else {
 		fmt.Print("\nFound no unparsed signals found\n")
 	}
+}
+
+type ParseJob struct {
+	documentId string
+	json       map[string]interface{}
+}
+
+type ParseResult struct {
+	documentId string
+	data       []byte
 }

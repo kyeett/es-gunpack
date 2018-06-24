@@ -140,3 +140,9 @@ Result:
 ```
 go get -u github.com/golang/protobuf/protoc-gen-go
 ```
+
+# Sublime
+
+| Command | Description |
+|---------|-------------|
+| ctrl+g  | gotoline    |

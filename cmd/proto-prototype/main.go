@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"go/importer"
 	"log"
 
 	"github.com/golang/protobuf/proto"
@@ -44,5 +45,9 @@ func main() {
 
 	// Update payload
 	unpackerClient.SetFieldByteValue("data", data)
+
+	//Find info about pkg
+	pkg, err := importer.Default().Import("time")
+	fmt.Printf("%+v, %T\n", pkg, pkg)
 
 }

@@ -1,0 +1,7 @@
+syntax = "proto2";
+package example;
+
+message Test3 {
+  required int32 type2 = 2;
+  required string label2 = 1;
+}

@@ -1,18 +1,17 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"errors"
 	"os"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/protobuf/proto"
 	"github.com/kyeett/es-gunpack/pkg/unpacker"
 	"github.com/urfave/cli"
 
 	b64 "encoding/base64"
+	"encoding/json"
 
-	example "github.com/kyeett/es-gunpack/pkg/example-protofiles"
+	"github.com/kyeett/es-gunpack/pkg/example-protofiles"
 )
 
 func main() {
@@ -56,7 +55,7 @@ func main() {
 			os.Exit(0)
 		}
 
-		//Set tag parsed=false to all documents
+		//Set tag parsed=false to all documeBnts
 		if c.Bool("reset-parsed") {
 			unpackerClient.SetParsedStatus(false)
 			os.Exit(0)
@@ -78,22 +77,29 @@ func main() {
 	app.Run(os.Args)
 }
 
-func printData(jsonMap map[string]interface{}) {
+func printData(jsonMap map[string]interface{}) ([]byte, error) {
 
 	if str, ok := jsonMap["data"].(string); ok {
-		sDec, _ := b64.StdEncoding.DecodeString(str)
+
+		sDec, err := b64.StdEncoding.DecodeString(str)
+		if err != nil {
+			return nil, err
+		}
 
 		newTest := &example.Test{}
-		err := proto.Unmarshal([]byte(sDec), newTest)
+		err = proto.Unmarshal([]byte(sDec), newTest)
 		if err != nil {
-			log.Fatal("unmarshaling error: ", err)
+			return nil, err
 		}
-		fmt.Printf("%v, %T\n", jsonMap["data"], jsonMap["data"])
-		fmt.Printf("%v, %T\n", newTest, newTest)
-		spew.Dump(newTest)
+
+		j, err := json.Marshal(newTest)
+		if err != nil {
+			return nil, err
+		}
+		return j, nil
 
 	} else {
-		log.Fatal("field 'data' is not string and cannot be decoded")
+		return nil, errors.New("Field 'data' is not string and cannot be decoded")
 	}
 
 }
